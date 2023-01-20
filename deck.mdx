@@ -7,146 +7,278 @@ import { github, vsDark } from "@code-surfer/themes";
 
 export const theme = vsDark;
 
-# Hello 👋
+# Typescript tips Vol.2 💡
 
-You are using [MDX Deck](https://github.com/jxnblk/mdx-deck) and [Code Surfer](https://codesurfer.pomb.us)
+## Zhentian Wan @ Zscaler
+
+---
+
+## Content
+
+- Function scope
+- Type fetch request
+- Branded type
+
+---
+
+### Tips 5: Function scope
 
 ---
 
 <CodeSurfer>
 
-```js title="This is a title" subtitle="and this a subtitle"
-function lorem(ipsum, dolor = 1) {
-  const sit = ipsum == null ? 0 : ipsum.sit;
-  dolor = sit - amet(dolor);
-  return sit
-    ? consectetur(ipsum, 0, dolor < 0 ? 0 : dolor)
-    : [];
-}
+```ts subtitle="problem of function scope"
+declare function setState(
+  fn: (oldState: { ui: string }) => { ui: string }
+): void;
 
-function incididunt(ipsum, ut = 1) {
-  ut = labore.et(amet(ut), 0);
-  const sit = ipsum == null ? 0 : ipsum.sit;
+declare function fetchData(): Promise<string | undefined>;
 
-  if (!sit || ut < 1) {
-    return [];
+async function main() {
+  let result: string | undefined;
+  result = await fetchData();
+  if (!result) {
+    return;
   }
-
-  let dolore = 0;
-  let magna = 0;
-  const aliqua = new eiusmod(labore.ut(sit / ut));
-
-  while (dolore < sit) {
-    aliqua[magna++] = consectetur(
-      ipsum,
-      dolore,
-      (dolore += ut)
-    );
-  }
-
-  return aliqua;
+  // doesn't work
+  // Type 'string | undefined' is not assignable to type 'string'.
+  setState((state) => ({ ...state, ui: result }));
 }
 ```
 
-```js
-function lorem(ipsum, dolor = 1) {
-  const sit = ipsum == null ? 0 : ipsum.sit;
-  dolor = sit - amet(dolor);
-  return sit
-    ? consectetur(ipsum, 0, dolor < 0 ? 0 : dolor)
-    : [];
-}
+```diff 1:5
 
-function adipiscing(...elit) {
-  if (!elit.sit) {
-    return [];
+```
+
+```diff 7:16
+
+```
+
+```ts subtitle="handle in main() scope"
+async function main() {
+  let result: string | undefined;
+  result = await fetchData();
+  if (!result) {
+    return;
   }
-
-  const sed = elit[0];
-  return eiusmod.tempor(sed) ? sed : [sed];
-}
-
-function incididunt(ipsum, ut = 1) {
-  ut = labore.et(amet(ut), 0);
-  const sit = ipsum == null ? 0 : ipsum.sit;
-
-  if (!sit || ut < 1) {
-    return [];
-  }
-
-  let dolore = 0;
-  let magna = 0;
-  const aliqua = new eiusmod(labore.ut(sit / ut));
-
-  while (dolore < sit) {
-    aliqua[magna++] = consectetur(
-      ipsum,
-      dolore,
-      (dolore += ut)
-    );
-  }
-
-  return aliqua;
+  const ui = result;
+  //    ^?    string
+  setState((state) => ({ ...state, ui }));
 }
 ```
 
-```diff 1[10:14],2[15:19],3[22:27],10:12
+```ts subtitle="handle in setState() scope"
+async function main() {
+  let result: string | undefined;
+  result = await fetchData();
 
+  setState((state) => {
+    return result ? { ...state, ui: result } : state;
+  });
+}
 ```
 
 </CodeSurfer>
 
 ---
 
-<CodeSurferColumns themes={[vsDark, github]}>
+#### Summary
 
-<Step>
-
-```js
-const magna = aliqua => aliqua.ut((enim, ad) => enim, 0);
-```
-
-```js
-const minim = (ad, enim) => dolore.magna(ad / enim);
-```
-
-</Step>
-
-<Step>
-
-```js
-const lorem = (ipsum, dolor, sit) => {
-  const amet = dolor - ipsum;
-  return consectetur.adipiscing(
-    {
-      elit: sed.eiusmod(sit - dolor) / amet + 2,
-    },
-    (tempor, incididunt) => ipsum + amet * incididunt
-  );
-};
-
-const magna = aliqua => aliqua.ut((enim, ad) => enim, 0);
-```
-
-```js
-const minim = (ad, enim) => dolore.magna(ad / enim);
-
-const sed = (eiusmod, tempor, incididunt) => {
-  const ut = tempor - eiusmod;
-  return labore.et(
-    {
-      amet: dolore.magna(incididunt - tempor) / ut + 2,
-    },
-    (aliqua, elit) => eiusmod + ut * elit
-  );
-};
-```
-
-</Step>
-
-</CodeSurferColumns>
+- Passing variable between two functions
+  - Control flow only works in each function scope
+  - Use the type from init phrase, not from control flow
 
 ---
 
-docs:  
-[codesurfer.pomb.us](https://codesurfer.pomb.us)
+### Tip 6. Branded Type
+
+---
+
+<CodeSurfer>
+
+```ts subtitle="problem"
+export type UUID = string;
+// can give any string value
+// but we expect uid to be 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX'
+const uid: UUID = "abc";
+```
+
+</CodeSurfer>
+
+---
+
+<CodeSurfer>
+
+```ts subtitle="define a branded type"
+declare const brand: unique symbol;
+type Brand<K extends string, T> = T & { [brand]: K };
+```
+
+```ts subtitle="use a branded type"
+type UUID = Brand<"UUID", string>;
+/*
+string & {
+  brand: 'USD'
+}
+*/
+const uid: UUID = "abc"; // doesn't work, 'abc' is not assignable to UUID
+```
+
+</CodeSurfer>
+
+---
+
+#### Using branded type with type guards/assertion
+
+---
+
+<CodeSurfer>
+
+```ts
+function isValidateUUID(x: string): boolean {
+  return (
+    typeof x === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      x
+    )
+  );
+}
+// type guard
+function isUUID(x: string | UUID): x is UUID {
+  return isValidateUUID(x);
+}
+// type assertion
+function assertsUUID(x: string | UUID): asserts x is UUID {
+  if (!isValidateUUID(x)) {
+    throw new Error("Not a validate UUID");
+  }
+}
+```
+
+```ts
+function isValidateUUID(x: string): boolean {
+  return (
+    typeof x === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      x
+    )
+  );
+}
+// type guard
+function isUUID(x: string | UUID): x is UUID {
+  return isValidateUUID(x);
+}
+// type assertion
+function assertsUUID(x: string | UUID): asserts x is UUID {
+  if (!isValidateUUID(x)) {
+    throw new Error("Not a validate UUID");
+  }
+}
+```
+
+</CodeSurfer>
+
+---
+
+#### Usage: force validation on type level
+
+---
+
+<CodeSurfer>
+
+```ts
+// cbi-client/src/includes/controls/index.ts
+this.socket.addEventListener('message', this.parseMessage.bind(this))
+
+parseMessage(event: MessageEvent): void {
+  if (event.data === controlMsg.ping.MSG) {
+
+  } else if
+  ...
+}
+
+```
+
+```ts
+// cbi-client/src/includes/controls/index.ts
+// We want to parse the message by using Zod
+this.socket.addEventListener('message', this.parseMessage.bind(this))
+
+parseMessage(event: MessageEvent): void {
+  if (event.data === controlMsg.ping.MSG) {
+
+  } else if
+  ...
+}
+
+```
+
+```ts
+// cbi-client/src/includes/controls/index.ts
+// We want to parse the message by using Zod
+this.socket.addEventListener('message', this.handleMessage.bind(this))
+
+handleMessage(event: MessageEvent): void {
+  // validation + parseMessage
+}
+
+parseMessage(event: ValidMessageEvent): void {
+  if (event.data === controlMsg.ping.MSG) {
+
+  } else if
+  ...
+}
+
+```
+
+```diff 3[40:58],5:7
+
+```
+
+```diff 9[21:37]
+
+```
+
+```ts
+// Zod validator for all messages
+import { MessageValidators } from "@cbi/controls-messages/src/validators";
+// Branded type
+type ValidMessageEvent = Brand<
+  "ValidMessageEvent",
+  MessageEvent
+>;
+// type assertion
+function validateMessage(
+  message: MessageEvent
+): asserts message is ValidMessageEvent {
+  // if parse error, then throw
+  MessageValidators.parse(message);
+}
+```
+
+```ts
+handleMessage(event: MessageEvent): void {
+    try {
+      // validation against Zod
+      validateMessage(event)
+      //               ^? MessageEvent
+      this.parseMessage(event)
+      //                 ^? ValidMessageEvent
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error(err.message)
+      }
+    }
+  }
+```
+
+</CodeSurfer>
+
+---
+
+#### Summary
+
+- We can enforce validation by using Branded type
+- A pattern we can use to enhance code safety
+
+---
