@@ -121,7 +121,7 @@ string & {
   brand: 'UUID'
 }
 */
-const uid: UUID = "abc"; // doesn't work, 'abc' is not assignable to UUID
+const id: UUID = "abc"; // doesn't work, 'abc' is not assignable to UUID
 ```
 
 </CodeSurfer>
@@ -183,10 +183,10 @@ function assertsUUID(x: string | UUID): asserts x is UUID {
 <CodeSurfer>
 
 ```ts
-const uuid: string = "xxxxxx-xxxx-xxxxx-xxxxxxxxxx"
-if (isUUID(uuid)) {
-  uuid
-// ^? UUID  
+const id: string = "xxxxxx-xxxx-xxxxx-xxxxxxxxxx"
+if (isUUID(id)) {
+  id
+//^? UUID  
 }
 ```
 
@@ -205,7 +205,7 @@ if (isUUID(uuid)) {
 this.socket.addEventListener('message', this.parseMessage.bind(this))
 
 parseMessage(event: MessageEvent): void {
-  if (event.data === controlMsg.ping.MSG) {
+  if (event.type === controlMsg.ping.MSG) {
 
   } else if
   ...
