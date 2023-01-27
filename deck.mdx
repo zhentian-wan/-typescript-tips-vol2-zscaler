@@ -118,7 +118,7 @@ type Brand<K extends string, T> = T & { [brand]: K };
 type UUID = Brand<"UUID", string>;
 /*
 string & {
-  brand: 'USD'
+  brand: 'UUID'
 }
 */
 const uid: UUID = "abc"; // doesn't work, 'abc' is not assignable to UUID
@@ -173,6 +173,20 @@ function assertsUUID(x: string | UUID): asserts x is UUID {
   if (!isValidateUUID(x)) {
     throw new Error("Not a validate UUID");
   }
+}
+```
+
+</CodeSurfer>
+
+---
+
+<CodeSurfer>
+
+```ts
+const uuid: string = "xxxxxx-xxxx-xxxxx-xxxxxxxxxx"
+if (isUUID(uuid)) {
+  uuid
+// ^? UUID  
 }
 ```
 
